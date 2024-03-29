@@ -31,7 +31,7 @@ class Backup:
     
     def make_folder(self):
         if self.do_backup:
-            os_system('mkdir -p {}'.format(self.bcp_dir))
+            command('mkdir -p {}'.format(self.bcp_dir))
 
 
     def do_backup(self, file):
@@ -42,8 +42,6 @@ class Backup:
 class File:
     src : str
     dst : str
-    hosts: Hosts
-    yes : bool = False
 
     def send(self):
         pass
@@ -51,16 +49,24 @@ class File:
     def __str__(self):
         return 'src: {} dst: {}'.format(self.src, self.dst)
 
-    def _prepare_command(self):
-        return 'scp -r {}{} {}{}'.format(self.hosts.src + ':' if self.hosts.src else '',
-                                           self.src,
-                                           self.hosts.dst + ':' if self.hosts.dst else '',
-                                           self.dst)
-    def copy(self):
+
+@dataclass
+class Copier:
+    hosts: Hosts
+    yes: bool = False
+
+    def __call__(self, file):
         cmd = self._prepare_command()
         if not self.yes:
             print(cmd, '? (y/N)')
         ## run cmd
+
+
+    def _prepare_command(self, file):
+        return 'scp -r {}{} {}{}'.format(self.hosts.src + ':' if self.hosts.src else '',
+                                           file.src,
+                                           self.hosts.dst + ':' if self.hosts.dst else '',
+                                           file.dst)
 
 
 class Main:
@@ -72,6 +78,7 @@ class Main:
                            )
         # make bcp_dir
         self.yes = self.args.force_yes
+        self.copy = Copier(self.hosts, self.yes)
         self.backuper.make_folder()
        
     def print_settings(self):
@@ -91,8 +98,7 @@ class Main:
             if len(s) != 2:
                 print('bad input')
                 continue
-            file = File(*s, self.hosts, self.yes)
-            file.copy()
+            file = File(*s )
             ## try to do backup
             ## try to copy file with scp
 
