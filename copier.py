@@ -3,6 +3,7 @@ import os
 import sys
 import argparse
 import shlex
+import signal
 from dataclasses import dataclass
 
 
@@ -15,6 +16,13 @@ def command(*args, **kwargs):
     ret=os.system(*args, **kwargs)
     if ret:
         raise RetcodeError(ret)
+
+class SignalHandlers:
+    @classmethod
+    def sigint_handler(cls, sig, frame):
+        print("SIGINT done")
+        exit(0)
+
 
 
 @dataclass
@@ -34,9 +42,9 @@ class Backup:
             command('mkdir -p {}'.format(self.bcp_dir))
 
 
-    def do_backup(self, file):
+    def backup(self, file):
         if self.do_backup:
-            pass
+            print('here I try to make backup')
 
 @dataclass
 class File:
@@ -56,9 +64,9 @@ class Copier:
     yes: bool = False
 
     def __call__(self, file):
-        cmd = self._prepare_command()
+        cmd = self._prepare_command(file)
         if not self.yes:
-            print(cmd, '? (y/N)')
+            print(cmd, '?(y/N)')
         ## run cmd
 
 
@@ -100,7 +108,9 @@ class Main:
                 continue
             file = File(*s )
             ## try to do backup
+            self.backuper.backup(file)
             ## try to copy file with scp
+            self.copy(file)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -109,5 +119,8 @@ if __name__ == '__main__':
     parser.add_argument('-b', '--backup', action='store_true', default=False)
     parser.add_argument('-y', '--force_yes', action='store_true', default=False)
     parser.add_argument('--backup_folder', action='store', default=DEFAULT_BACKUP)
+
+    signal.signal(signal.SIGINT, SignalHandlers.sigint_handler)
+
     main = Main(parser.parse_args())
     main()
