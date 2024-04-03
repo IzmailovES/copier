@@ -27,15 +27,16 @@ class SignalHandlers:
 
 @dataclass
 class Hosts:
-    src   : str | None = None
-    dst   : str | None = None
-    src_passwd : str | None = None
-    dst_passwd : str | None = None
+    src         : str | None = None
+    dst         : str | None = None
+    src_passwd  : str | None = None
+    dst_passwd  : str | None = None
         
 @dataclass
 class Backup:
-    bcp_dir    : str | None = None
-    do_backup  : bool       = False
+    hosts       :  Hosts
+    bcp_dir     : str | None = None
+    do_backup   : bool       = False
     
     def make_folder(self):
         if self.do_backup:
@@ -66,9 +67,10 @@ class Copier:
     def __call__(self, file):
         cmd = self._prepare_command(file)
         if not self.yes:
-            print(cmd, '?(y/N)')
-        ## run cmd
-
+            ans = input('{cmd} ?(y/N)'.format(cmd=cmd))
+            if ans.lower() not in ['y', 'yes']:
+                return 1
+        return command(cmd)
 
     def _prepare_command(self, file):
         return 'scp -r {}{} {}{}'.format(self.hosts.src + ':' if self.hosts.src else '',
@@ -80,10 +82,10 @@ class Copier:
 class Main:
     def __init__(self, parsed_args):
         self.args = parsed_args
-        self.backuper = Backup(do_backup=self.args.backup, bcp_dir=self.args.backup_folder)
         self.hosts = Hosts(src = self.args.src_host,
                            dst = self.args.dst_host
                            )
+        self.backuper = Backup(do_backup=self.args.backup, bcp_dir=self.args.backup_folder, hosts=self.hosts)
         # make bcp_dir
         self.yes = self.args.force_yes
         self.copy = Copier(self.hosts, self.yes)
