@@ -16,6 +16,7 @@ def command(*args, **kwargs):
     ret=os.system(*args, **kwargs)
     if ret:
         raise RetcodeError(ret)
+    return ret
 
 class SignalHandlers:
     @classmethod
@@ -24,13 +25,13 @@ class SignalHandlers:
         exit(0)
 
 
-
 @dataclass
 class Hosts:
     src         : str | None = None
     dst         : str | None = None
     src_passwd  : str | None = None
     dst_passwd  : str | None = None
+
         
 @dataclass
 class Backup:
@@ -46,6 +47,7 @@ class Backup:
     def backup(self, file):
         if self.do_backup:
             print('here I try to make backup')
+
 
 @dataclass
 class File:
@@ -101,7 +103,10 @@ class Main:
         print(self.args.__dict__)
         self.print_settings()
         while True:
-            s = shlex.split(input())
+            try:
+                s = shlex.split(input())
+            except:
+                s = None
             if not s:
                 print('done')
                 exit(0)
@@ -114,6 +119,8 @@ class Main:
             ## try to copy file with scp
             self.copy(file)
 
+
+#### main ####
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-s', '--src_host', action='store', default='')
@@ -126,3 +133,4 @@ if __name__ == '__main__':
 
     main = Main(parser.parse_args())
     main()
+
