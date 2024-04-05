@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 import os
 import sys
 import argparse
@@ -33,11 +34,12 @@ class Hosts:
     dst_passwd  : str | None = None
 
         
-@dataclass
 class Backup:
-    hosts       :  Hosts
-    bcp_dir     : str | None = None
-    do_backup   : bool       = False
+    def __init__(self, hosts, bcp_dir=None, do_backup=False):
+        self.hosts=hosts
+        self.bcp_dir=bcp_dir
+        self.do_backup=do_backup
+        self.copy=Copier(Hosts(src=hosts.dst, dst=''), yes=True)
     
     def make_folder(self):
         if self.do_backup:
@@ -47,6 +49,7 @@ class Backup:
     def backup(self, file):
         if self.do_backup:
             print('here I try to make backup')
+            self.copy(File(file.dst, self.bcp_dir))
 
 
 @dataclass
